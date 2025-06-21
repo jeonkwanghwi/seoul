@@ -78,6 +78,8 @@
       margin: auto;
       padding: 120px 0 60px 0; /* 상단 네비게이션 바 공간 확보 */
       display: none; /* 초기에는 숨김 */
+      opacity: 1;
+      transition: opacity 0.5s ease;
     }
     .section { display: none; }
     .section.active {
@@ -392,6 +394,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  const allNavButtons = document.querySelectorAll('nav button');
   const navButtons = document.querySelectorAll('nav button[data-target]');
   const homeButton = document.getElementById('home-btn');
   const sections = document.querySelectorAll('.section');
@@ -402,39 +405,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const hero = document.querySelector('.hero');
   const container = document.querySelector('.container');
 
+  const setActiveButton = (activeButton) => {
+    allNavButtons.forEach(button => {
+      button.classList.remove('active');
+    });
+    if (activeButton) {
+      activeButton.classList.add('active');
+    }
+  };
+
   // 홈 버튼 클릭 처리
   homeButton.addEventListener('click', () => {
-    // 컨텐츠 숨기고 hero 섹션 표시
-    container.style.display = 'none';
-    hero.style.display = 'flex';
-    hero.style.opacity = '1';
-
-    // 모든 버튼의 active 클래스 제거
-    navButtons.forEach(btn => btn.classList.remove('active'));
+    if (getComputedStyle(container).display === 'block') {
+      container.style.opacity = '0';
+      setTimeout(() => {
+        container.style.display = 'none';
+        hero.style.display = 'flex';
+        // hero가 나타날 때도 transition 효과를 주기 위해 opacity를 0->1로 변경
+        hero.style.opacity = '0'; 
+        setTimeout(() => hero.style.opacity = '1', 10);
+      }, 500); // container transition 시간과 일치
+    }
+    setActiveButton(homeButton);
   });
 
   // 네비게이션 버튼 클릭 처리
   navButtons.forEach(button => {
     button.addEventListener('click', () => {
       // 첫 클릭 시 hero 섹션 숨기고 컨텐츠 표시
-      if (container.style.display !== 'block') {
+      if (getComputedStyle(hero).display !== 'none') {
         hero.style.opacity = '0';
         setTimeout(() => {
           hero.style.display = 'none';
           container.style.display = 'block';
-        }, 500); // transition 시간과 일치
+          container.style.opacity = '1';
+        }, 500); // hero transition 시간과 일치
       }
 
       const targetId = button.dataset.target;
       const targetSection = document.getElementById(targetId);
 
-      // 모든 버튼과 섹션에서 active 클래스 제거
-      navButtons.forEach(btn => btn.classList.remove('active'));
       sections.forEach(sec => sec.classList.remove('active'));
-
-      // 클릭된 버튼과 해당 섹션에 active 클래스 추가
-      button.classList.add('active');
       targetSection.classList.add('active');
+      setActiveButton(button);
     });
   });
 
@@ -468,6 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
       closeModal();
     }
   });
+
+  // 초기 상태 설정
+  setActiveButton(homeButton);
 });
 </script>
 </body>
