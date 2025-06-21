@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서울의 재발견: 나만의 장소 찾기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #5e72e4;
+      --secondary-color: #f4f5f7;
+      --text-color: #32325d;
+      --light-text-color: #8898aa;
+      --background-color: #fff;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --card-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    nav ul { list-style: none; display: flex; }
+    nav button {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 20px 25px;
+      cursor: pointer;
+      transition: color 0.3s, border-bottom 0.3s;
+      color: var(--light-text-color);
+      border-bottom: 3px solid transparent;
+    }
+    nav button.active, nav button:hover {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(135deg, var(--primary-color) 0%, #8965e0 100%);
+      color: #fff;
+      transition: opacity 0.5s ease-out;
+    }
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .hero p {
+      font-size: 1.25rem;
+      max-width: 600px;
+    }
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 120px 0 60px 0; /* 상단 네비게이션 바 공간 확보 */
+      display: none; /* 초기에는 숨김 */
+    }
+    .section { display: none; }
+    .section.active {
+      display: block;
+      animation: fadeIn 0.8s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .section h2 {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+      color: var(--text-color);
+      text-align: center;
+      position: relative;
+    }
+    .section h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background-color: var(--primary-color);
+      border-radius: 2px;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+    }
+    .card {
+      background: var(--background-color);
+      border-radius: 15px;
+      padding: 25px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: var(--card-shadow);
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+    .card:hover { 
+      transform: translateY(-8px); 
+      box-shadow: 0 7px 14px rgba(50,50,93,.1), 0 3px 6px rgba(0,0,0,.08);
+    }
+    .details { display: none; }
+    .modal {
+      position: fixed;
+      z-index: 2000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal.show { display: flex; opacity: 1; }
+    .modal-content {
+      background: var(--background-color);
+      padding: 40px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+      transform: translateY(-50px);
+      transition: transform 0.3s ease;
+    }
+    .modal.show .modal-content {
+      transform: translateY(0);
+    }
+    .close-button {
+      position: absolute;
+      top: 15px; right: 20px;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: var(--light-text-color);
+    }
+    .close-button:hover { color: var(--text-color); }
+    #modal-body h3 { font-size: 1.8rem; color: var(--primary-color); margin-bottom: 20px;}
+    #modal-body ul { list-style: none; margin-bottom: 20px; }
+    #modal-body li { margin-bottom: 8px; }
+    #modal-body h4 { font-size: 1.2rem; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid var(--primary-color); padding-left: 10px;}
+    .map { width: 100%; height: 250px; border: none; border-radius: 8px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><button id="home-btn">#홈</button></li>
+      <li><button data-target="sens">#감성</button></li>
+      <li><button data-target="common">#인기</button></li>
+      <li><button data-target="rare">#가볼만한</button></li>
+    </ul>
+  </nav>
+
+  <header class="hero">
+    <h1>서울의 재발견</h1>
+    <p>당신을 위한 특별한 장소를 찾아보세요.</p>
+  </header>
+
+  <div class="container">
+    <section id="sens" class="section">
+      <h2>감성적인 공간</h2>
+      <div class="card-grid">
+        <div class="card" data-details-id="bukchon">북촌 한옥마을</div>
+        <div class="card" data-details-id="samcheong">삼청동 카페거리</div>
+        <div class="card" data-details-id="seongsu">성수</div>
+        <div class="card" data-details-id="yeonnam">연남동</div>
+        <div class="card" data-details-id="yongridan">용리단길</div>
+        <div class="card" data-details-id="haebangchon">해방촌</div>
+        <div class="card" data-details-id="hyehwa">혜화</div>
+        <div class="card" data-details-id="gwanghwamun">광화문</div>
+      </div>
+    </section>
+
+    <section id="common" class="section">
+      <h2>많은 사람이 찾는 곳</h2>
+      <div class="card-grid">
+        <div class="card" data-details-id="myeongdong">명동</div>
+        <div class="card" data-details-id="ddp">동대문 디자인 플라자</div>
+        <div class="card" data-details-id="nseoul">N서울타워</div>
+        <div class="card" data-details-id="konkuk">건대입구</div>
+        <div class="card" data-details-id="hongdae">홍대</div>
+        <div class="card" data-details-id="gangnam">강남역</div>
+        <div class="card" data-details-id="itaewon">이태원</div>
+        <div class="card" data-details-id="yeouido">여의도</div>
+        <div class="card" data-details-id="jamsil">잠실</div>
+      </div>
+    </section>
+
+    <section id="rare" class="section">
+      <h2>색다른 가볼만한 곳</h2>
+      <div class="card-grid">
+        <div class="card" data-details-id="bookstreet">경의선 책거리</div>
+        <div class="card" data-details-id="nakwon">낙원상가</div>
+        <div class="card" data-details-id="noryangjin">노량진</div>
+        <div class="card" data-details-id="sinyongsan">신용산</div>
+        <div class="card" data-details-id="euljiro">을지로</div>
+      </div>
+    </section>
+  </div>
+  
+  <!-- 상세 정보 데이터 -->
+  <div class="details" id="bukchon">
+    <h3>북촌 한옥마을</h3>
+    <h4>맛집</h4>
+    <ul><li>북촌손만두</li><li>카페 온하루</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>전통 한옥 거리 산책</li><li>작은 갤러리 탐방</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=%EB%B6%81%EC%B4%8C%20%ED%95%9C%EC%98%A5%EB%A7%88%EC%9D%84&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="samcheong">
+    <h3>삼청동 카페거리</h3>
+    <h4>맛집</h4>
+    <ul><li>카페 리브레</li><li>플랫화이트</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>골목길 벽화</li><li>소품샵 구경</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=%EC%82%BC%EC%B2%AD%EB%8F%99%20%EC%B9%B4%ED%8E%98%EA%B1%B0%EB%A6%AC&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="myeongdong">
+    <h3>명동</h3>
+    <h4>맛집</h4>
+    <ul><li>명동교자</li><li>미도파</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>쇼핑 거리</li><li>명동성당</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=%EB%AA%85%EB%8F%99&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="ddp">
+    <h3>동대문 디자인 플라자</h3>
+    <h4>맛집</h4>
+    <ul><li>동대문칼국수</li><li>동대문엽기떡볶이</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>야경 감상</li><li>전시 관람</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=DDP&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="nseoul">
+    <h3>N서울타워</h3>
+    <h4>맛집</h4>
+    <ul><li>N 그릴 레스토랑</li><li>루프탑 바</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>서울 전경 전망</li><li>사랑의 자물쇠</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=N%EC%84%9C%EC%9A%B8%ED%83%80%EC%9B%8C&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="bookstreet">
+    <h3>경의선 책거리</h3>
+    <h4>맛집</h4>
+    <ul><li>북스카페</li><li>레트로 베이커리</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>책방 탐방</li><li>한강 뷰</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=%EA%B2%BD%EC%9D%98%EC%84%A0%20%EC%B1%85%EA%B1%B0%EB%A6%AC&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="nakwon">
+    <h3>낙원상가</h3>
+    <h4>맛집</h4>
+    <ul><li>떡볶이 골목</li><li>가마솥 순대</li></ul>
+    <h4>볼거리</h4>
+    <ul><li>악기 상가 투어</li><li>빈티지 카페</li></ul>
+    <h4>위치</h4>
+    <iframe src="https://maps.google.com/maps?q=%EB%82%99%EC%9B%90%EC%83%81%EA%B0%80&z=15&output=embed" class="map"></iframe>
+  </div>
+
+  <div class="details" id="seongsu">
+    <h3>성수</h3>
+    <h4>맛집</h4><ul><li>대림창고</li><li>카페 어니언</li></ul>
+    <h4>볼거리</h4><ul><li>편집샵 투어</li><li>갤러리 관람</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%84%B1%EC%88%98%EB%8F%99&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="yeonnam">
+    <h3>연남동</h3>
+    <h4>맛집</h4><ul><li>툭툭누들타이</li><li>연남방앗간</li></ul>
+    <h4>볼거리</h4><ul><li>경의선숲길 산책</li><li>아기자기한 소품샵</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%97%B0%EB%82%A8%EB%8F%99&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="yongridan">
+    <h3>용리단길</h3>
+    <h4>맛집</h4><ul><li>쌤쌤쌤</li><li>이국적인 식당가</li></ul>
+    <h4>볼거리</h4><ul><li>아모레퍼시픽 본사</li><li>독특한 컨셉의 가게</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%9A%A9%EB%A6%AC%EB%8B%A8%EA%B8%B8&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="haebangchon">
+    <h3>해방촌</h3>
+    <h4>맛집</h4><ul><li>더백푸드트럭</li><li>신흥시장 맛집</li></ul>
+    <h4>볼거리</h4><ul><li>남산타워 뷰</li><li>루프탑 카페</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%ED%95%B4%EB%B0%A9%EC%B4%8C&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="hyehwa">
+    <h3>혜화</h3>
+    <h4>맛집</h4><ul><li>독일주택</li><li>학림다방</li></ul>
+    <h4>볼거리</h4><ul><li>대학로 연극 관람</li><li>낙산공원 야경</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%ED%98%9C%ED%99%94%EB%8F%99&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="gwanghwamun">
+    <h3>광화문</h3>
+    <h4>맛집</h4><ul><li>광화문집</li><li>포비</li></ul>
+    <h4>볼거리</h4><ul><li>경복궁</li><li>세종문화회관</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EA%B4%91%ED%99%94%EB%AC%B8&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="konkuk">
+    <h3>건대입구</h3>
+    <h4>맛집</h4><ul><li>건대 양꼬치거리</li><li>호야초밥</li></ul>
+    <h4>볼거리</h4><ul><li>커먼그라운드</li><li>활기찬 대학가</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EA%B1%B4%EB%8C%80%EC%9E%85%EA%B5%AC&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="hongdae">
+    <h3>홍대</h3>
+    <h4>맛집</h4><ul><li>또보겠지떡볶이</li><li>개성있는 맛집</li></ul>
+    <h4>볼거리</h4><ul><li>버스킹 공연</li><li>KT&G 상상마당</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%ED%99%8D%EB%8C%80&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="gangnam">
+    <h3>강남역</h3>
+    <h4>맛집</h4><ul><li>땀땀</li><li>수많은 맛집</li></ul>
+    <h4>볼거리</h4><ul><li>지하상가 쇼핑</li><li>도심의 화려함</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EA%B0%95%EB%82%A8%EC%97%AD&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="itaewon">
+    <h3>이태원</h3>
+    <h4>맛집</h4><ul><li>라이너스바베큐</li><li>세계음식거리</li></ul>
+    <h4>볼거리</h4><ul><li>앤틱 가구 거리</li><li>이국적인 분위기</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%9D%B4%ED%83%9C%EC%9B%90&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="yeouido">
+    <h3>여의도</h3>
+    <h4>맛집</h4><ul><li>진주집</li><li>세상의모든아침</li></ul>
+    <h4>볼거리</h4><ul><li>여의도 한강공원</li><li>더현대 서울</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%97%AC%EC%9D%98%EB%8F%84&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="jamsil">
+    <h3>잠실</h3>
+    <h4>맛집</h4><ul><li>다운타우너</li><li>롯데월드몰 맛집</li></ul>
+    <h4>볼거리</h4><ul><li>롯데월드타워 전망대</li><li>석촌호수</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%9E%A0%EC%8B%A4&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="noryangjin">
+    <h3>노량진</h3>
+    <h4>맛집</h4><ul><li>노량진 수산시장</li><li>컵밥거리</li></ul>
+    <h4>볼거리</h4><ul><li>활기찬 수산시장</li><li>독특한 학원가 풍경</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EB%85%B8%EB%9F%89%EC%A7%84&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="sinyongsan">
+    <h3>신용산</h3>
+    <h4>맛집</h4><ul><li>몽탄</li><li>효뜨</li></ul>
+    <h4>볼거리</h4><ul><li>용산역 주변</li><li>아이파크몰</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%8B%A0%EC%9A%A9%EC%82%B0&z=15&output=embed" class="map"></iframe>
+  </div>
+  <div class="details" id="euljiro">
+    <h3>을지로</h3>
+    <h4>맛집</h4><ul><li>만선호프</li><li>을지로 골뱅이</li></ul>
+    <h4>볼거리</h4><ul><li>힙한 카페</li><li>인쇄소 골목</li></ul>
+    <h4>위치</h4><iframe src="https://maps.google.com/maps?q=%EC%9D%84%EC%A7%80%EB%A1%9C&z=15&output=embed" class="map"></iframe>
+  </div>
+
+  <!-- Modal -->
+  <div id="placeModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const navButtons = document.querySelectorAll('nav button[data-target]');
+  const homeButton = document.getElementById('home-btn');
+  const sections = document.querySelectorAll('.section');
+  const cards = document.querySelectorAll('.card');
+  const modal = document.getElementById('placeModal');
+  const modalBody = document.getElementById('modal-body');
+  const closeButton = document.querySelector('.close-button');
+  const hero = document.querySelector('.hero');
+  const container = document.querySelector('.container');
+
+  // 홈 버튼 클릭 처리
+  homeButton.addEventListener('click', () => {
+    // 컨텐츠 숨기고 hero 섹션 표시
+    container.style.display = 'none';
+    hero.style.display = 'flex';
+    hero.style.opacity = '1';
+
+    // 모든 버튼의 active 클래스 제거
+    navButtons.forEach(btn => btn.classList.remove('active'));
+  });
+
+  // 네비게이션 버튼 클릭 처리
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      // 첫 클릭 시 hero 섹션 숨기고 컨텐츠 표시
+      if (container.style.display !== 'block') {
+        hero.style.opacity = '0';
+        setTimeout(() => {
+          hero.style.display = 'none';
+          container.style.display = 'block';
+        }, 500); // transition 시간과 일치
+      }
+
+      const targetId = button.dataset.target;
+      const targetSection = document.getElementById(targetId);
+
+      // 모든 버튼과 섹션에서 active 클래스 제거
+      navButtons.forEach(btn => btn.classList.remove('active'));
+      sections.forEach(sec => sec.classList.remove('active'));
+
+      // 클릭된 버튼과 해당 섹션에 active 클래스 추가
+      button.classList.add('active');
+      targetSection.classList.add('active');
+    });
+  });
+
+  // 장소 카드 클릭 시 모달 열기
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const detailsId = card.dataset.detailsId;
+      const detailsContent = document.getElementById(detailsId).innerHTML;
+      
+      modalBody.innerHTML = detailsContent;
+      modal.classList.add('show');
+    });
+  });
+
+  // 모달 닫기
+  const closeModal = () => {
+    modal.classList.remove('show');
+  };
+
+  closeButton.addEventListener('click', closeModal);
+  
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  // ESC 키로 모달 닫기
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && modal.classList.contains('show')) {
+      closeModal();
+    }
+  });
+});
+</script>
+</body>
+</html>
